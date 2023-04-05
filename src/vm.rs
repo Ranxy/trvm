@@ -1,6 +1,8 @@
 use std::io::Read;
 use std::{fs::File, io::BufReader};
 
+use std::{thread, time};
+
 enum OpCode {
     Cst,
     Add,
@@ -39,6 +41,8 @@ pub struct Vm {
     stack: [i32; 400],
     sp: i32,
     pc: i32,
+
+    sleep_ms: u64,
 }
 
 impl Vm {
@@ -48,17 +52,17 @@ impl Vm {
             stack: [0; 400],
             sp: 0,
             pc,
+            sleep_ms: 0,
         }
     }
 
     pub fn new_from_file(file_path: &str) -> std::io::Result<Self> {
         let code = read_file_as_i32_vec(file_path)?;
-        Ok(Vm {
-            code,
-            stack: [0; 400],
-            sp: 0,
-            pc: 0,
-        })
+        Ok(Self::new(code, 0))
+    }
+
+    pub fn set_sleep_ms(&mut self, sleep_ms: u64) {
+        self.sleep_ms = sleep_ms
     }
 
     fn get_code(&self, idx: i32) -> i32 {
@@ -74,7 +78,7 @@ impl Vm {
     }
 
     fn pop_stack(&mut self) -> i32 {
-        self.sp = self.sp - 1;
+        self.sp -= 1;
         self.stack[self.sp as usize]
     }
 
@@ -170,6 +174,10 @@ impl Vm {
                     self.pc += offset;
                 }
                 OpCode::End => stop = true,
+            }
+
+            if self.sleep_ms != 0 {
+                thread::sleep(time::Duration::from_millis(self.sleep_ms));
             }
         }
 
