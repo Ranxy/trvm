@@ -1,5 +1,6 @@
 use clap::Parser;
 
+mod repl;
 mod vm;
 
 #[derive(Parser, Debug)]
@@ -20,14 +21,15 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    println!("file_name: {}", args.file_name);
-    println!("sleep_ms: {}", args.sleep_ms);
-    println!("single_step: {}", args.single_step);
-
     let mut vm = vm::Vm::new_from_file(&args.file_name).unwrap();
     vm.set_sleep_ms(args.sleep_ms);
 
-    let res = vm.run();
-
-    println!("RES: {}", res)
+    if args.single_step {
+        let mut repl = repl::Repl::new(&mut vm);
+        repl.start();
+    } else {
+        vm.run();
+        let res = vm.get_result();
+        println!("RES: {}", res)
+    }
 }
